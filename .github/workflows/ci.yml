@@ -2,37 +2,24 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and Push
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./app
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/webapp:latest
-
-  deploy:
-    runs-on: self-hosted
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to K3s
-        run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl rollout restart deployment/webapp
-          kubectl rollout status deployment/webapp --timeout=60s
+          tags: ghcr.io/piyaphan098/webapp:latest
